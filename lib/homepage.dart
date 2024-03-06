@@ -1,20 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 
 import 'package:p4/edit_profile.dart';
 import 'package:p4/login_screen.dart';
-import 'package:p4/search_for_device.dart';
 import 'package:p4/notification_page.dart';
+import 'package:p4/search_for_device.dart';
 
+import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
-void main() {
-  runApp(const HomePage());
-}
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -25,7 +21,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String selectedCategory = ''; // Track the selected category
-
   String defaultUsername = '';
   String defaultEmail = '';
   LatLng? _initialCameraPosition;
@@ -94,152 +89,146 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue.withOpacity(1),
-          centerTitle: true,
-          leading: Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              );
-            },
-          ),
-          title: Builder(
-            builder: (BuildContext context) {
-              return Text('Welcome, $defaultUsername');
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.blue.withOpacity(1),
+        centerTitle: true,
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu_open),
               onPressed: () {
-                // Implement navigation to the notifications page
-                _navigateToNotifications(context);
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
+        title: Builder(
+          builder: (BuildContext context) {
+            return Text('Welcome, $defaultUsername');
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              // Implement navigation to the notifications page
+              _navigateToNotifications(context);
+            },
+          ),
+          IconButton(
+            icon: const CircleAvatar(
+              radius: 20, // Set the radius to the desired size
+              backgroundImage:
+                  AssetImage('lib/assets/logo.png'), // Provide the image path
+            ),
+            onPressed: () {
+              // Implement navigation to the account page
+            },
+          ),
+        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              accountName: Text(
+                defaultUsername,
+              ),
+              accountEmail: Text(
+                defaultEmail,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+              ),
+              currentAccountPicture: const CircleAvatar(
+                backgroundImage: AssetImage('lib/assets/logo.png'),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.search_sharp),
+              title: const Text(
+                'Search for Device',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SearchForDevicePage()),
+                );
               },
             ),
-            IconButton(
-              icon: const CircleAvatar(
-                radius: 20, // Set the radius to the desired size
-                backgroundImage:
-                    AssetImage('lib/assets/logo.png'), // Provide the image path
+            ListTile(
+              leading: const Icon(Icons.account_box),
+              title: const Text(
+                'Account',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              onPressed: () {
-                // Implement navigation to the account page
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfilePage(
+                      updateUsername: updateUsername,
+                    ),
+                  ),
+                );
               },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text(
+                'About Us',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {},
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text(
+                'Log Out',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () => _signOut(context),
             ),
           ],
         ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              UserAccountsDrawerHeader(
-                accountName: Text(
-                  defaultUsername,
-                ),
-                accountEmail: Text(
-                  defaultEmail,
-                ),
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                ),
-                currentAccountPicture: const CircleAvatar(
-                  backgroundImage: AssetImage('lib/assets/logo.png'),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.search_sharp),
-                title: const Text(
-                  'Search for Device',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SearchForDevicePage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.account_box),
-                title: const Text(
-                  'Account',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditProfilePage(
-                        updateUsername: updateUsername,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: const Text(
-                  'About Us',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () => _signOut(context),
-              ),
-            ],
-          ),
-        ),
-        body: _initialCameraPosition == null
-            ? Center(child: CircularProgressIndicator())
-            : WebView(
-                initialUrl:
-                    'https://www.openstreetmap.org/#map=14/${_initialCameraPosition!.latitude}/${_initialCameraPosition!.longitude}',
-                javascriptMode: JavascriptMode.unrestricted,
-                onPageFinished: (String url) {
-                  _requestGeolocationPermission();
-                },
-                onWebViewCreated: (controller) {
-                  _webView = controller;
-                },
-              ),
       ),
+      body: _initialCameraPosition == null
+          ? Center(child: CircularProgressIndicator())
+          : WebView(
+              initialUrl:
+                  'https://www.openstreetmap.org/#map=14/${_initialCameraPosition!.latitude}/${_initialCameraPosition!.longitude}',
+              javascriptMode: JavascriptMode.unrestricted,
+              onPageFinished: (String url) {
+                _requestGeolocationPermission();
+              },
+              onWebViewCreated: (controller) {
+                _webView = controller;
+              },
+            ),
     );
   }
 
