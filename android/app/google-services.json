@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "362668889250",
+    "project_id": "thesis-fb5f5",
+    "storage_bucket": "thesis-fb5f5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362668889250:android:d87b00c9d3e4042e1333fb",
+        "android_client_info": {
+          "package_name": "com.example.p4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg7qjy0-u2rUOz1D7nQuRmjBvx5_yp0JU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362668889250:android:cc081180c002985d1333fb",
+        "android_client_info": {
+          "package_name": "com.example.proto3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg7qjy0-u2rUOz1D7nQuRmjBvx5_yp0JU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
