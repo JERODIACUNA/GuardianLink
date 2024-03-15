@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:p4/edit_profile.dart';
-import 'package:p4/login_screen.dart';
-import 'package:p4/notification_page.dart';
-import 'package:p4/search_for_device.dart';
+import 'package:GuardianLink/edit_profile.dart';
+import 'package:GuardianLink/login_screen.dart';
+import 'package:GuardianLink/notification_page.dart';
+import 'package:GuardianLink/search_for_device.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> {
       // Access Firestore collection to retrieve the user's name
       DocumentSnapshot<Map<String, dynamic>> userData = await FirebaseFirestore
           .instance
-          .collection('users')
+          .collection('Caregivers')
           .doc(user.uid)
           .get();
 
@@ -166,9 +166,9 @@ class _HomePageState extends State<HomePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.account_box),
+              leading: const Icon(Icons.settings),
               title: const Text(
-                'Account',
+                'Settings',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.black,
