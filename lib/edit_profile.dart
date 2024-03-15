@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:p4/login_screen.dart';
+import 'package:GuardianLink/login_screen.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Function(String) updateUsername;
@@ -17,6 +17,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _contactInfoController = TextEditingController();
 
   @override
   void initState() {
@@ -29,7 +30,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (user != null) {
       DocumentSnapshot<Map<String, dynamic>> userData = await FirebaseFirestore
           .instance
-          .collection('users')
+          .collection('Caregivers')
           .doc(user.uid)
           .get();
 
@@ -37,6 +38,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _nameController.text = userData['name'];
           _emailController.text = user.email ?? '';
+          _contactInfoController.text =
+              userData['contactInfo'] ?? ''; // Load contact information
         });
       }
     }
@@ -51,9 +54,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         // Update user information in Firestore
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection('Caregivers')
             .doc(user.uid)
-            .update({'name': _nameController.text});
+            .update({
+          'name': _nameController.text,
+          'contactInfo':
+              _contactInfoController.text, // Update contact information
+        });
 
         // Call the callback function to update the username in the parent widget
         widget.updateUsername(_nameController.text);
@@ -107,7 +114,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                     // Delete user data from Firestore
                     await FirebaseFirestore.instance
-                        .collection('users')
+                        .collection('Caregivers')
                         .doc(user.uid)
                         .delete();
 
@@ -143,65 +150,83 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: const Text('Settings'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.only(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12)),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16.0),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.only(
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _contactInfoController,
+                decoration: const InputDecoration(
+                  labelText: 'Contact Information',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12)),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-              enabled: false, // Make email field uneditable
-            ),
-            const SizedBox(height: 16.0),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.only(
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12)),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
                 ),
+                enabled: false, // Make email field uneditable
               ),
-              obscureText: true,
-              enabled: false, // Make password field uneditable
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _updateProfile,
-              child: const Text('Update Profile'),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _deleteAccount,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Change button color to red
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                obscureText: true,
+                enabled: false, // Make password field uneditable
               ),
-              child: const Text('Delete Account'),
-            ),
-          ],
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: _updateProfile,
+                child: const Text('Update Profile'),
+              ),
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: _deleteAccount,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red, // Change button color to red
+                ),
+                child: const Text('Delete Account'),
+              ),
+            ],
+          ),
         ),
       ),
     );

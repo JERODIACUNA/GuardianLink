@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:p4/homepage.dart'; // Import FirebaseAuth
+import 'package:GuardianLink/homepage.dart'; // Import FirebaseAuth
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import FirebaseFirestore
 
 class SignUpScreen extends StatefulWidget {
@@ -14,6 +14,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _contactInfoController = TextEditingController();
+  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +66,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 16.0),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.only(
@@ -72,8 +74,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       bottomRight: Radius.circular(12),
                     ),
                   ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                        _obscureText ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscureText,
+              ),
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _contactInfoController,
+                decoration: const InputDecoration(
+                  labelText: 'Contact Information',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
@@ -86,13 +110,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       password: _passwordController.text,
                     );
 
-                    // Add user's name to Firestore
+                    // Add user's data to Firestore in the "Caregivers" collection
                     await FirebaseFirestore.instance
-                        .collection('users')
+                        .collection('Caregivers')
                         .doc(userCredential.user!.uid)
                         .set({
                       'name': _nameController.text,
                       'email': _emailController.text,
+                      'contactInfo': _contactInfoController
+                          .text, // Adding contact information
                       // Add any other fields you want to store
                     });
 

@@ -1,8 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
-import 'package:p4/homepage.dart';
-import 'sign_up.dart'; // Import the SignUpScreen
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:GuardianLink/homepage.dart';
+import 'sign_up.dart';
+import 'package:permission_handler/permission_handler.dart'; // Import PermissionHandler
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -14,6 +15,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -49,56 +51,52 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16.0),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(12),
                         bottomRight: Radius.circular(12)),
                   ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                        _obscureText ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscureText,
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: () async {
-                  try {
-                    // Sign in with email and password
-                    await FirebaseAuth.instance.signInWithEmailAndPassword(
-                      email: _emailController.text,
-                      password: _passwordController.text,
-                    );
-                    // User signed in successfully
-                    print('User signed in: ${_emailController.text}');
-                    // Navigate to the home page or perform other actions
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const HomePage()), // Replace HomePage() with your actual homepage widget
-                    );
-                  } catch (e) {
-                    // Handle sign-in failures
-                    print('Failed to sign in: $e');
-                    // Show an error message to the user
+                  // Check location permission before signing in
+                  bool locationPermissionGranted =
+                      await _checkLocationPermission();
+                  if (locationPermissionGranted) {
+                    _signInWithEmailAndPassword();
+                  } else {
+                    // Show a message or handle permission denied scenario
+                    print('Location permission denied.');
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue, // Background color
-                  onPrimary: Colors.white, // Text color
+                  primary: Colors.blue,
+                  onPrimary: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     vertical: 15,
                   ),
-                  // Button padding
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(12), // Button border radius
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
                   'Log In',
                   style: TextStyle(
-                    fontSize: 18, // Text size
+                    fontSize: 18,
                   ),
                 ),
               ),
@@ -138,5 +136,36 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _checkLocationPermission() async {
+    PermissionStatus permissionStatus = await Permission.location.status;
+    if (permissionStatus == PermissionStatus.granted) {
+      return true;
+    } else {
+      permissionStatus = await Permission.location.request();
+      return permissionStatus == PermissionStatus.granted;
+    }
+  }
+
+  void _signInWithEmailAndPassword() async {
+    try {
+      // Sign in with email and password
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      // User signed in successfully
+      print('User signed in: ${_emailController.text}');
+      // Navigate to the home page or perform other actions
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } catch (e) {
+      // Handle sign-in failures
+      print('Failed to sign in: $e');
+      // Show an error message to the user
+    }
   }
 }
