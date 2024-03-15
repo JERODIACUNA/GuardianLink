@@ -14,7 +14,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _contactInfoController = TextEditingController();
+  final TextEditingController _contactNumberController =
+      TextEditingController();
   bool _obscureText = true;
 
   @override
@@ -88,9 +89,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 16.0),
               TextField(
-                controller: _contactInfoController,
+                controller: _contactNumberController,
                 decoration: const InputDecoration(
-                  labelText: 'Contact Information',
+                  labelText: 'Contact Number',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
@@ -117,8 +118,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         .set({
                       'name': _nameController.text,
                       'email': _emailController.text,
-                      'contactInfo': _contactInfoController
-                          .text, // Adding contact information
+                      'contactNumber': _contactNumberController
+                          .text, // Changed to 'contactNumber' in Firestore
                       // Add any other fields you want to store
                     });
 

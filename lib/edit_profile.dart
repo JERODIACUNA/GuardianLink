@@ -17,7 +17,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _contactInfoController = TextEditingController();
+  final TextEditingController _contactNumberController =
+      TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  bool _obscureTextCurrent = true;
+  bool _obscureTextNew = true;
 
   @override
   void initState() {
@@ -38,8 +42,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _nameController.text = userData['name'];
           _emailController.text = user.email ?? '';
-          _contactInfoController.text =
-              userData['contactInfo'] ?? ''; // Load contact information
+          _contactNumberController.text =
+              userData['contactNumber'] ?? ''; // Load contact number
         });
       }
     }
@@ -49,97 +53,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        // Update user's display name
-        await user.updateDisplayName(_nameController.text);
-
-        // Update user information in Firestore
         await FirebaseFirestore.instance
             .collection('Caregivers')
             .doc(user.uid)
             .update({
           'name': _nameController.text,
-          'contactInfo':
-              _contactInfoController.text, // Update contact information
+          'contactNumber': _contactNumberController.text,
         });
 
-        // Call the callback function to update the username in the parent widget
         widget.updateUsername(_nameController.text);
 
-        // Navigate back to home page
-        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Profile updated successfully'),
+          backgroundColor: Colors.green,
+        ));
       } catch (e) {
-        print('Failed to update profile: $e');
-        // Handle error updating profile
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to update profile: $e'),
+          backgroundColor: Colors.red,
+        ));
       }
     }
   }
 
-  void _deleteAccount() async {
+  void _updatePassword() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        // Prompt the user to enter their email and password for reauthentication
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Reauthentication'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                  ),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                  ),
-                ],
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () async {
-                    // Perform reauthentication
-                    await user.reauthenticateWithCredential(
-                      EmailAuthProvider.credential(
-                        email: _emailController.text,
-                        password: _passwordController.text,
-                      ),
-                    );
+        AuthCredential credential = EmailAuthProvider.credential(
+            email: user.email!, password: _passwordController.text);
+        await user.reauthenticateWithCredential(credential);
+        await user.updatePassword(_newPasswordController.text);
 
-                    // Delete user from Firebase Authentication
-                    await user.delete();
-
-                    // Delete user data from Firestore
-                    await FirebaseFirestore.instance
-                        .collection('Caregivers')
-                        .doc(user.uid)
-                        .delete();
-
-                    // Close the dialog
-                    Navigator.pop(context);
-
-                    // Navigate to the login screen
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  },
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        );
-      } catch (e) {
-        print('Failed to delete account: $e');
-        // Show an error message to the user
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to delete account: $e'),
+          content: Text('Password updated successfully'),
+          backgroundColor: Colors.green,
+        ));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to update password: $e'),
           backgroundColor: Colors.red,
         ));
       }
@@ -172,9 +124,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 16.0),
               TextField(
-                controller: _contactInfoController,
+                controller: _contactNumberController,
                 decoration: const InputDecoration(
-                  labelText: 'Contact Information',
+                  labelText: 'Contact Number',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
@@ -200,22 +152,62 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: 16.0),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
                     ),
                   ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureTextCurrent
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureTextCurrent = !_obscureTextCurrent;
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
-                enabled: false, // Make password field uneditable
+                obscureText: _obscureTextCurrent,
+              ),
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _newPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureTextNew ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureTextNew = !_obscureTextNew;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscureTextNew,
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _updateProfile,
                 child: const Text('Update Profile'),
+              ),
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: _updatePassword,
+                child: const Text('Update Password'),
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
@@ -230,5 +222,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ),
     );
+  }
+
+  void _deleteAccount() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('Caregivers')
+            .doc(user.uid)
+            .delete();
+
+        await user.delete();
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to delete account: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
   }
 }
