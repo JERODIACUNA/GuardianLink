@@ -10,7 +10,7 @@ import 'package:GuardianLink/search_for_device.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,9 +23,10 @@ class _HomePageState extends State<HomePage> {
   String selectedCategory = ''; // Track the selected category
   String defaultUsername = '';
   String defaultEmail = '';
-  LatLng? _initialCameraPosition;
+  late LatLng _initialCameraPosition =
+      LatLng(0, 0); // Initialize with default value
   late Position _currentPosition;
-  late WebViewController _webView;
+  late GoogleMapController _mapController; // Google Map Controller
 
   @override
   void initState() {
@@ -216,17 +217,28 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: _initialCameraPosition == null
+      body: _initialCameraPosition.latitude == 0 &&
+              _initialCameraPosition.longitude == 0
           ? Center(child: CircularProgressIndicator())
-          : WebView(
-              initialUrl:
-                  'https://www.openstreetmap.org/#map=14/${_initialCameraPosition!.latitude}/${_initialCameraPosition!.longitude}',
-              javascriptMode: JavascriptMode.unrestricted,
-              onPageFinished: (String url) {
-                _requestGeolocationPermission();
+          : GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _initialCameraPosition,
+                zoom: 14,
+              ),
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller;
               },
-              onWebViewCreated: (controller) {
-                _webView = controller;
+              myLocationEnabled: true, // Show user's current location
+              myLocationButtonEnabled:
+                  true, // Enable button to center camera on user's location
+              markers: {
+                Marker(
+                  markerId: MarkerId('currentLocation'),
+                  position: _initialCameraPosition,
+                  infoWindow: InfoWindow(
+                    title: 'Current Location',
+                  ),
+                ),
               },
             ),
     );
@@ -267,22 +279,4 @@ class _HomePageState extends State<HomePage> {
       print(e);
     }
   }
-
-  void _requestGeolocationPermission() async {
-    final String script = '''
-      navigator.geolocation.getCurrentPosition = function(success, error, options) {
-        window.postMessage({ type: 'geolocation', payload: options });
-      };
-    ''';
-
-    await Future.delayed(Duration(milliseconds: 500));
-    await _webView.evaluateJavascript(script);
-  }
-}
-
-class LatLng {
-  final double latitude;
-  final double longitude;
-
-  LatLng(this.latitude, this.longitude);
 }

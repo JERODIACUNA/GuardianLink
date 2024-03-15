@@ -6,6 +6,9 @@
         android:label="GuardianLink"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyDwrvSB9fIcgpIElUAl1zOxi5K9k9Uonr8" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
