@@ -77,15 +77,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   bool locationPermissionGranted =
                       await _checkLocationPermission();
                   if (locationPermissionGranted) {
-                    _signInWithEmailAndPassword();
+                    _signInWithEmailAndPassword(context);
                   } else {
                     // Show a message or handle permission denied scenario
                     print('Location permission denied.');
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue,
-                  onPrimary: Colors.white,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blue,
                   padding: const EdgeInsets.symmetric(
                     vertical: 15,
                   ),
@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _signInWithEmailAndPassword() async {
+  void _signInWithEmailAndPassword(BuildContext context) async {
     try {
       // Sign in with email and password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -165,7 +165,11 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       // Handle sign-in failures
       print('Failed to sign in: $e');
-      // Show an error message to the user
+      // Show an error message to the user using SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to sign in. Please check your credentials.'),
+        backgroundColor: Colors.red,
+      ));
     }
   }
 }

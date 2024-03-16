@@ -63,7 +63,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         widget.updateUsername(_nameController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Profile updated successfully'),
           backgroundColor: Colors.green,
         ));
@@ -85,7 +85,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         await user.reauthenticateWithCredential(credential);
         await user.updatePassword(_newPasswordController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Password updated successfully'),
           backgroundColor: Colors.green,
         ));
@@ -154,7 +154,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Current Password',
-                  border: OutlineInputBorder(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
@@ -180,7 +180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 controller: _newPasswordController,
                 decoration: InputDecoration(
                   labelText: 'New Password',
-                  border: OutlineInputBorder(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
@@ -200,22 +200,51 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 obscureText: _obscureTextNew,
               ),
               const SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _updateProfile,
-                child: const Text('Update Profile'),
+              SizedBox(
+                width: 200, // Adjusted width
+                child: ElevatedButton(
+                  onPressed: _updateProfile,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Update Profile',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
               ),
               const SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _updatePassword,
-                child: const Text('Update Password'),
+              SizedBox(
+                width: 200, // Adjusted width
+                child: ElevatedButton(
+                  onPressed: _updatePassword,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Update Password',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
               ),
               const SizedBox(height: 16.0),
-              ElevatedButton(
+              OutlinedButton(
                 onPressed: _deleteAccount,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red, // Change button color to red
+                    // Change button color to red
+                    ),
+                child: const Text(
+                  'Delete Account',
+                  style: TextStyle(color: Colors.red),
                 ),
-                child: const Text('Delete Account'),
               ),
             ],
           ),
@@ -228,18 +257,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection('Caregivers')
-            .doc(user.uid)
-            .delete();
+        // Prompt user to re-enter their password for security verification
+        String? password = await _showPasswordDialog();
+        if (password != null) {
+          AuthCredential credential = EmailAuthProvider.credential(
+            email: user.email!,
+            password: password,
+          );
 
-        await user.delete();
+          // Reauthenticate user before deleting the account
+          await user.reauthenticateWithCredential(credential);
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-        );
+          // Delete user data from Firestore
+          await FirebaseFirestore.instance
+              .collection('Caregivers')
+              .doc(user.uid)
+              .delete();
+
+          // Delete user account
+          await user.delete();
+
+          // Navigate to login screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Failed to delete account: $e'),
@@ -247,5 +291,50 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ));
       }
     }
+  }
+
+  Future<String?> _showPasswordDialog() async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Reauthentication'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                  'Please enter your password to confirm account deletion:'),
+              TextField(
+                obscureText: true,
+                onChanged: (value) {
+                  setState(() {
+                    _passwordController.text = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(_passwordController.text);
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
