@@ -32,3 +32,9 @@ flutter:
   uses-material-design: true
   assets:
     - lib\assets\logo.png
+
+# In your pubspec.yaml file
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "lib/assets/logo.png" # Path to your new app icon
