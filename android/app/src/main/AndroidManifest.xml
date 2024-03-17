@@ -5,7 +5,7 @@
     <application
         android:label="GuardianLink"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/logo">
         <meta-data
         android:name="com.google.android.geo.API_KEY"
         android:value="AIzaSyDwrvSB9fIcgpIElUAl1zOxi5K9k9Uonr8" />
