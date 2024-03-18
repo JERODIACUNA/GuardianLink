@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:GuardianLink/login_screen.dart';
+import 'theme.dart'; // Import the theme file
 
 class EditProfilePage extends StatefulWidget {
   final Function(String) updateUsername;
+  final bool isDarkMode;
 
-  const EditProfilePage({Key? key, required this.updateUsername})
+  const EditProfilePage(
+      {Key? key, required this.updateUsername, required this.isDarkMode})
       : super(key: key);
 
   @override
@@ -63,15 +66,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         widget.updateUsername(_nameController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Colors.green,
-        ));
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Profile Updated'),
+              content: Text('Your profile has been updated successfully.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to update profile: $e'),
-          backgroundColor: Colors.red,
-        ));
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Failed to Update Profile'),
+              content:
+                  Text('An error occurred while updating your profile: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
       }
     }
   }
@@ -85,168 +115,211 @@ class _EditProfilePageState extends State<EditProfilePage> {
         await user.reauthenticateWithCredential(credential);
         await user.updatePassword(_newPasswordController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Password updated successfully'),
-          backgroundColor: Colors.green,
-        ));
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Password Updated'),
+              content: Text('Your password has been updated successfully.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to update password: $e'),
-          backgroundColor: Colors.red,
-        ));
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Failed to Update Password'),
+              content:
+                  Text('An error occurred while updating your password: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+    return MaterialApp(
+      theme: widget.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Settings'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _contactNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Contact Number',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _contactNumberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Contact Number',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                  enabled: false, // Make email field uneditable
+                ),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureTextCurrent
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureTextCurrent = !_obscureTextCurrent;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscureTextCurrent,
+                ),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _newPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureTextNew
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureTextNew = !_obscureTextNew;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscureTextNew,
+                ),
+                const SizedBox(height: 16.0),
+                SizedBox(
+                  width: 200, // Adjusted width
+                  child: ElevatedButton(
+                    onPressed: _updateProfile,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 10),
+                      backgroundColor:
+                          widget.isDarkMode ? Colors.grey : Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ), // Change color to grey in dark mode
+                    ),
+                    child: const Text(
+                      'Update Profile',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
-                enabled: false, // Make email field uneditable
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Current Password',
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                const SizedBox(height: 16.0),
+                SizedBox(
+                  width: 200, // Adjusted width
+                  child: ElevatedButton(
+                    onPressed: _updatePassword,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 10),
+                      backgroundColor:
+                          widget.isDarkMode ? Colors.grey : Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ), // Change color to grey in dark mode
                     ),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureTextCurrent
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                    child: const Text(
+                      'Update Password',
+                      style: TextStyle(color: Colors.white),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureTextCurrent = !_obscureTextCurrent;
-                      });
-                    },
                   ),
                 ),
-                obscureText: _obscureTextCurrent,
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _newPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'New Password',
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureTextNew ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureTextNew = !_obscureTextNew;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: _obscureTextNew,
-              ),
-              const SizedBox(height: 16.0),
-              SizedBox(
-                width: 200, // Adjusted width
-                child: ElevatedButton(
-                  onPressed: _updateProfile,
+                const SizedBox(height: 16.0),
+                OutlinedButton(
+                  onPressed: _deleteAccount,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                      // Change button color to red
+                      ),
                   child: const Text(
-                    'Update Profile',
-                    style: TextStyle(color: Colors.black),
+                    'Delete Account',
+                    style: TextStyle(color: Colors.red),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              SizedBox(
-                width: 200, // Adjusted width
-                child: ElevatedButton(
-                  onPressed: _updatePassword,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Update Password',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              OutlinedButton(
-                onPressed: _deleteAccount,
-                style: ElevatedButton.styleFrom(
-                    // Change button color to red
-                    ),
-                child: const Text(
-                  'Delete Account',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

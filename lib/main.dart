@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Login Demo',
+      title: 'GuardianLink',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
