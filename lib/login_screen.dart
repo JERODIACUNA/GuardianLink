@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
-  bool isDarkMode = false; // Track the current theme mode
+  bool isDarkMode = false;
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: AppTheme.getTheme(isDarkMode), // Set the theme here
+      theme: AppTheme.getTheme(isDarkMode),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
@@ -47,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 200, // Adjust the height as needed
                   ),
                 ),
+                // Existing login UI code
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -82,6 +83,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscureText,
                 ),
                 const SizedBox(height: 16.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        _resetPassword(context);
+                      },
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
                 ElevatedButton(
                   onPressed: () {
                     _signInWithEmailAndPassword(context);
@@ -103,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 36.0),
                 RichText(
                   text: TextSpan(
@@ -111,9 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         text: "Don't have an account? ",
                         style: TextStyle(
                           fontSize: 15,
-                          color: isDarkMode
-                              ? Colors.white
-                              : Colors.black, // Adjust color based on theme
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                       TextSpan(
@@ -125,7 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            // Navigate to the sign-up screen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -147,22 +163,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _signInWithEmailAndPassword(BuildContext context) async {
     try {
-      // Sign in with email and password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
-      // User signed in successfully
-      print('User signed in: ${_emailController.text}');
-      // Navigate to the home page or perform other actions
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } catch (e) {
-      // Handle sign-in failures
-      print('Failed to sign in: $e');
-      // Show an error message to the user using AlertDialog
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -183,7 +192,68 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Load the theme preference from SharedPreferences
+  void _resetPassword(BuildContext context) async {
+    String email = _emailController.text.trim();
+    if (email.isNotEmpty) {
+      try {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Password Reset Email Sent'),
+              content: Text('Password reset email sent to $email'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Reset Password Failed'),
+              content: Text('Failed to reset password. Please try again: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Invalid Email'),
+            content: Text('Please enter your email address to reset password'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   void _loadTheme() async {
     bool savedTheme = await AppTheme.getThemePreference();
     setState(() {
