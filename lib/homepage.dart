@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                       child: GoogleMap(
                         initialCameraPosition: CameraPosition(
                           target: _initialCameraPosition,
-                          zoom: 14,
+                          zoom: 16,
                         ),
                         onMapCreated: (GoogleMapController controller) {
                           _mapController = controller;
@@ -290,13 +290,12 @@ class _HomePageState extends State<HomePage> {
                           fenceRadius = value;
                           circles = Set.from([
                             Circle(
-                              circleId: CircleId('geofence'),
-                              center: _selectedLocation,
-                              radius: fenceRadius,
-                              strokeWidth: 2,
-                              fillColor: Colors.blue.withOpacity(0.1),
-                              strokeColor: Colors.blue,
-                            ),
+                                circleId: CircleId('geofence'),
+                                center: _selectedLocation,
+                                radius: fenceRadius,
+                                strokeWidth: 2,
+                                fillColor: Colors.green.withOpacity(0.1),
+                                strokeColor: Color.fromARGB(255, 7, 252, 43)),
                           ]);
                         });
                       },
@@ -376,8 +375,8 @@ class _HomePageState extends State<HomePage> {
           center: _selectedLocation,
           radius: fenceRadius,
           strokeWidth: 2,
-          fillColor: Colors.blue.withOpacity(0.1),
-          strokeColor: Colors.blue,
+          fillColor: Colors.green.withOpacity(0.1),
+          strokeColor: Color.fromARGB(255, 7, 252, 43),
         ),
       ]);
     });
