@@ -4,9 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:GuardianLink/homepage.dart';
 import 'sign_up.dart';
 import 'theme.dart'; // Import the theme file
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final void Function(bool value)? onLogin; // Make the parameter optional
+
+  const LoginScreen({Key? key, this.onLogin}) : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -167,6 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+      // Store the authentication state
+      await _setLoggedIn(context, true);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
@@ -188,6 +193,26 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           );
         },
+      );
+    }
+  }
+
+  Future<void> _setLoggedIn(BuildContext context, bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', value);
+  }
+
+  Future<bool> _getLoggedIn() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isLoggedIn') ?? false;
+  }
+
+  Future<void> _checkCurrentUser() async {
+    final bool isLoggedIn = await _getLoggedIn();
+    if (isLoggedIn) {
+      // User is signed in
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => HomePage()),
       );
     }
   }

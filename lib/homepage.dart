@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'geofencing.dart'; // Import the geofencing file
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -31,6 +32,10 @@ class _HomePageState extends State<HomePage> {
   late Position _currentPosition;
   late GoogleMapController _mapController;
   bool isDarkMode = false;
+  Future<void> _setLoggedIn(bool isLoggedIn) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', isLoggedIn);
+  }
 
   @override
   void initState() {
@@ -72,9 +77,11 @@ class _HomePageState extends State<HomePage> {
   void _signOut(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
+      await _setLoggedIn(false); // Clear login status
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(
+            builder: (context) => LoginScreen(onLogin: (bool) {})),
         (route) => false,
       );
     } catch (e) {

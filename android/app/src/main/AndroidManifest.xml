@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/> <!-- add -->
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/> <!-- add -->
 
     <application
         android:label="GuardianLink"
@@ -8,7 +8,7 @@
         android:icon="@drawable/logo">
         <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyDwrvSB9fIcgpIElUAl1zOxi5K9k9Uonr8" />
+        android:value="AIzaSyDwrvSB9fIcgpIElUAl1zOxi5K9k9Uonr8" /> <!-- api key -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
