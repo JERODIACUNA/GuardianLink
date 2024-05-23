@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
+import 'package:firebase_core/firebase_core.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import 'homepage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(); // Initialize Firebase
   runApp(MainApp());
 }
@@ -15,16 +15,37 @@ Future<void> main() async {
 class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'GuardianLink',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home:
-          AuthenticationWrapper(), // Use AuthenticationWrapper as the home screen
+      routerConfig: router,
     );
   }
+}
+
+final router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, __) => const AuthenticationWrapper(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (_, __) => const HomePage(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (_, __) => const LoginScreen(onLogin: _setLoggedIn),
+    ),
+  ],
+);
+
+Future<void> _setLoggedIn(bool value) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('isLoggedIn', value);
 }
 
 class AuthenticationWrapper extends StatefulWidget {
@@ -35,12 +56,11 @@ class AuthenticationWrapper extends StatefulWidget {
 }
 
 class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Check if the user is already signed in
     _checkCurrentUser();
   }
 
@@ -50,19 +70,26 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
 
     if (isLoggedIn) {
       // User is logged in, navigate to home page
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      context.go('/home');
+    } else {
+      // User is not logged in, navigate to login page
+      context.go('/login');
     }
-  }
-
-  void _setLoggedIn(bool value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', value);
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return LoginScreen(onLogin: _setLoggedIn);
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    } else {
+      return Container(); // Empty container as GoRouter will handle navigation
+    }
   }
 }

@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(
+                    border: const OutlineInputBorder(
                       borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(12),
                           bottomRight: Radius.circular(12)),
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         _resetPassword(context);
                       },
-                      child: Text(
+                      child: const Text(
                         'Forgot Password?',
                         style: TextStyle(
                           color: Colors.blue,
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextSpan(
                         text: 'Sign up',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 15,
                           color: Colors.blue,
                           decoration: TextDecoration.underline,
@@ -177,24 +177,32 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } catch (e) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Sign In Failed'),
-            content: Text('Failed to sign in. Please check your credentials.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      // Schedule the dialog operation after the current build is complete
+      Future.microtask(() {
+        _showSignInFailedDialog(context);
+      });
     }
+  }
+
+  void _showSignInFailedDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Sign In Failed'),
+          content:
+              const Text('Failed to sign in. Please check your credentials.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _setLoggedIn(BuildContext context, bool value) async {
@@ -212,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (isLoggedIn) {
       // User is signed in
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
   }
@@ -226,14 +234,14 @@ class _LoginScreenState extends State<LoginScreen> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Password Reset Email Sent'),
+              title: const Text('Password Reset Email Sent'),
               content: Text('Password reset email sent to $email'),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -244,14 +252,14 @@ class _LoginScreenState extends State<LoginScreen> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Reset Password Failed'),
+              title: const Text('Reset Password Failed'),
               content: Text('Failed to reset password. Please try again: $e'),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -263,14 +271,15 @@ class _LoginScreenState extends State<LoginScreen> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Invalid Email'),
-            content: Text('Please enter your email address to reset password'),
+            title: const Text('Invalid Email'),
+            content:
+                const Text('Please enter your email address to reset password'),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );
