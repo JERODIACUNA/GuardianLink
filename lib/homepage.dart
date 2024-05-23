@@ -32,6 +32,8 @@ class _HomePageState extends State<HomePage> {
   late Position _currentPosition;
   late GoogleMapController _mapController;
   bool isDarkMode = false;
+  bool isGeofencingEnabled = false;
+
   Future<void> _setLoggedIn(bool isLoggedIn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', isLoggedIn);
@@ -78,12 +80,12 @@ class _HomePageState extends State<HomePage> {
     try {
       await FirebaseAuth.instance.signOut();
       await _setLoggedIn(false); // Clear login status
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-            builder: (context) => LoginScreen(onLogin: (bool) {})),
-        (route) => false,
-      );
+      Navigator.popUntil(context,
+          (route) => route.isFirst); // Remove all routes until the root route
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => LoginScreen(onLogin: (bool) {})));
     } catch (e) {
       print(e);
     }
@@ -183,10 +185,29 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
+              // ListTile(
+              //  leading: const Icon(Icons.search_sharp),
+              //  title: Text(
+              //  'Search for Device',
+              //  style: TextStyle(
+              //   fontSize: 16,
+              //   color: isDarkMode ? Colors.white : Colors.black,
+              //   fontFamily: 'Roboto',
+              // fontWeight: FontWeight.w500,
+              // ),
+              //),
+              //  onTap: () {
+              //  Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //        builder: (context) => const SearchForDevicePage()),
+              //   );
+              // },
+              // ),
               ListTile(
-                leading: const Icon(Icons.search_sharp),
+                leading: const Icon(Icons.save),
                 title: Text(
-                  'Search for Device',
+                  'Edit Geofence',
                   style: TextStyle(
                     fontSize: 16,
                     color: isDarkMode ? Colors.white : Colors.black,
@@ -195,11 +216,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SearchForDevicePage()),
-                  );
+                  setState(() {
+                    isGeofencingEnabled = !isGeofencingEnabled;
+                  });
                 },
               ),
               ListTile(
@@ -224,19 +243,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   );
                 },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: Text(
-                  'About Us',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {},
               ),
               ListTile(
                 leading: const Icon(Icons.logout),
@@ -285,45 +291,51 @@ class _HomePageState extends State<HomePage> {
                         circles: circles,
                       ),
                     ),
-                    Slider(
-                      value: _sliderValue,
-                      min: 5.0,
-                      max: 50.0,
-                      divisions: 9,
-                      label: 'Geofence Radius: $_sliderValue meters',
-                      onChanged: (value) {
-                        setState(() {
-                          _sliderValue = value;
-                          fenceRadius = value;
-                          circles = Set.from([
-                            Circle(
+                    if (isGeofencingEnabled) ...[
+                      Slider(
+                        value: _sliderValue,
+                        min: 5.0,
+                        max: 50.0,
+                        divisions: 9,
+                        label: 'Geofence Radius: $_sliderValue meters',
+                        onChanged: (value) {
+                          setState(() {
+                            _sliderValue = value;
+                            fenceRadius = value;
+                            circles = Set.from([
+                              Circle(
                                 circleId: CircleId('geofence'),
                                 center: _selectedLocation,
                                 radius: fenceRadius,
                                 strokeWidth: 2,
                                 fillColor: Colors.green.withOpacity(0.1),
-                                strokeColor: Color.fromARGB(255, 7, 252, 43)),
-                          ]);
-                        });
-                      },
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        String? username = await GeofencingService
-                            .fetchUsername(); // Fetch username
-                        if (username != null) {
-                          GeofencingService.storeGeofencingData(
-                            fenceRadius: fenceRadius,
-                            selectedLocation: _selectedLocation,
-                            username:
-                                username, // Pass the nullable username here
-                          );
-                        } else {
-                          print('Username not found or an error occurred.');
-                        }
-                      },
-                      child: Text('Save Geofencing Data'),
-                    ),
+                                strokeColor: Color.fromARGB(255, 7, 252, 43),
+                              ),
+                            ]);
+                          });
+                        },
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          String? username =
+                              await GeofencingService.fetchUsername();
+                          if (username != null) {
+                            GeofencingService.storeGeofencingData(
+                              fenceRadius: fenceRadius,
+                              selectedLocation: _selectedLocation,
+                              username: username,
+                            );
+                            // Toggle isGeofencingEnabled after saving data
+                            setState(() {
+                              isGeofencingEnabled = false;
+                            });
+                          } else {
+                            print('Username not found or an error occurred.');
+                          }
+                        },
+                        child: Text('Save Geofencing Data'),
+                      ),
+                    ],
                   ],
                 ),
               ),
