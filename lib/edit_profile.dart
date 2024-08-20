@@ -9,8 +9,7 @@ class EditProfilePage extends StatefulWidget {
   final bool isDarkMode;
 
   const EditProfilePage(
-      {Key? key, required this.updateUsername, required this.isDarkMode})
-      : super(key: key);
+      {super.key, required this.updateUsername, required this.isDarkMode});
 
   @override
   _EditProfilePageState createState() => _EditProfilePageState();
@@ -70,14 +69,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Profile Updated'),
-              content: Text('Your profile has been updated successfully.'),
+              title: const Text('Profile Updated'),
+              content: const Text('Your profile has been updated successfully.'),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -88,7 +87,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Failed to Update Profile'),
+              title: const Text('Failed to Update Profile'),
               content:
                   Text('An error occurred while updating your profile: $e'),
               actions: [
@@ -96,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -119,14 +118,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Password Updated'),
-              content: Text('Your password has been updated successfully.'),
+              title: const Text('Password Updated'),
+              content: const Text('Your password has been updated successfully.'),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -137,7 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Failed to Update Password'),
+              title: const Text('Failed to Update Password'),
               content:
                   Text('An error occurred while updating your password: $e'),
               actions: [
@@ -145,7 +144,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -164,7 +163,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         appBar: AppBar(
           title: const Text('Settings'),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.of(context).pop();
             },

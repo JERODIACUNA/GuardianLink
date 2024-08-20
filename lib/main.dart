@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import 'homepage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,37 +13,15 @@ Future<void> main() async {
 class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GuardianLink',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      routerConfig: router,
+      home: const AuthenticationWrapper(),
     );
   }
-}
-
-final router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (_, __) => const AuthenticationWrapper(),
-    ),
-    GoRoute(
-      path: '/home',
-      builder: (_, __) => const HomePage(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (_, __) => const LoginScreen(onLogin: _setLoggedIn),
-    ),
-  ],
-);
-
-Future<void> _setLoggedIn(bool value) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('isLoggedIn', value);
 }
 
 class AuthenticationWrapper extends StatefulWidget {
@@ -68,20 +44,28 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-    if (isLoggedIn) {
-      // User is logged in, navigate to home page
-      context.go('/home');
-    } else {
-      // User is not logged in, navigate to login page
-      context.go('/login');
+    // Ensure the widget is still mounted before navigating
+    if (mounted) {
+      if (isLoggedIn) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => LoginScreen(onLogin: _setLoggedIn)),
+        );
+      }
     }
-    setState(() {
-      _isLoading = false;
-    });
+  }
+
+  Future<void> _setLoggedIn(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', value);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Display a loading indicator while checking login status
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -89,7 +73,8 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
         ),
       );
     } else {
-      return Container(); // Empty container as GoRouter will handle navigation
+      // This should be an empty container or a screen that shows nothing since navigation is handled
+      return Container();
     }
   }
 }

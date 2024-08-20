@@ -4,7 +4,7 @@ import 'package:GuardianLink/homepage.dart'; // Import FirebaseAuth
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import FirebaseFirestore
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -69,7 +69,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
@@ -129,7 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => HomePage(),
+                        builder: (context) => const HomePage(),
                       ),
                     );
                   } catch (e) {
@@ -139,8 +139,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.blue, // background color
-                  onPrimary: Colors.white, // text color
+                  foregroundColor: Colors.white, backgroundColor: Colors.blue, // text color
                   padding: const EdgeInsets.symmetric(
                     vertical: 15,
                   ),

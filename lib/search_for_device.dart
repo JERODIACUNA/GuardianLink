@@ -9,10 +9,10 @@ class SearchForDevicePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Search for Device'),
       ),
-      body: Center(
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(
               Icons.search_sharp,
               size: 100,
