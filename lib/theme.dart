@@ -20,16 +20,18 @@ class AppTheme {
   );
 
   static Future<bool> getThemePreference() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Retrieve the theme preference, default to false (light mode) if not found
-    return prefs.getBool('isDarkMode') ?? false;
-  }
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
+  print('Theme preference retrieved: $isDarkMode');
+  return isDarkMode;
+}
 
-  static Future<void> setThemePreference(bool isDarkMode) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Save the theme preference
-    await prefs.setBool('isDarkMode', isDarkMode);
-  }
+static Future<void> setThemePreference(bool isDarkMode) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('isDarkMode', isDarkMode);
+  print('Theme preference set: $isDarkMode');
+}
+
 
   static Future<ThemeData> getSavedTheme() async {
     bool isDarkMode = await getThemePreference();
