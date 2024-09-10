@@ -3,11 +3,43 @@ import 'package:firebase_core/firebase_core.dart';
 import 'login_screen.dart';
 import 'homepage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
+import 'geofencing.dart'; // Import your geofencing service
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // Initialize Firebase
+
+  // Initialize Workmanager and notifications
+  await initializeWorkmanager();
+  await initializeNotifications();
+
   runApp(MainApp());
+}
+
+Future<void> initializeWorkmanager() async {
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  Workmanager().registerPeriodicTask(
+    "1",
+    "geofenceCheck",
+    frequency: const Duration(minutes: 15),
+    initialDelay: const Duration(seconds: 10), // For testing
+  );
+}
+
+Future<void> initializeNotifications() async {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 }
 
 class MainApp extends StatelessWidget {
@@ -77,4 +109,14 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
       return Container();
     }
   }
+}
+
+// Workmanager callback function
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    print('Workmanager task triggered: $task');
+    await Firebase.initializeApp();
+    await GeofencingService.checkGeofenceAndSendNotification();
+    return Future.value(true);
+  });
 }

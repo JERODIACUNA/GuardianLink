@@ -12,7 +12,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'geofencing.dart'; // Import the geofencing file
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:firebase_database/firebase_database.dart'; // Import Firebase Realtime Database
+import 'package:GuardianLink/edit_device_location.dart'; 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -21,6 +22,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final DatabaseReference _deviceLocationRef = FirebaseDatabase.instance.ref('device_location');
+
   late double fenceRadius = 5.0;
   late Set<Circle> circles = {};
   late double _sliderValue = 5.0;
@@ -33,12 +37,34 @@ class _HomePageState extends State<HomePage> {
   late GoogleMapController _mapController;
   bool isDarkMode = false;
   bool isGeofencingEnabled = false;
+  LatLng _previousLocation = LatLng(0, 0);
+  double _previousRadius = 5.0;
+  Map<String, Marker> _markers = {};
 
   Future<void> _setLoggedIn(bool isLoggedIn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', isLoggedIn);
   }
+void _updateMapWithLocation(String? location) {
+    if (location != null) {
+      final regex = RegExp(r'Latitude (-?\d+\.\d+), Longitude (-?\d+\.\d+)');
+      final match = regex.firstMatch(location);
+      if (match != null) {
+        final latitude = double.parse(match.group(1)!);
+        final longitude = double.parse(match.group(2)!);
+        final latLng = LatLng(latitude, longitude);
 
+        setState(() {
+          _mapController.animateCamera(CameraUpdate.newLatLng(latLng));
+          _markers['new_device'] = Marker(
+            markerId: MarkerId('new_device'),
+            position: latLng,
+            infoWindow: InfoWindow(title: 'New Device Location'),
+          );
+        });
+      }
+    }
+  }
   @override
   void initState() {
     super.initState();
@@ -48,7 +74,110 @@ class _HomePageState extends State<HomePage> {
     _loadTheme();
     GeofencingService.startGeofencing(); // Call geofencing start method
     fetchGeofencingData(); // Call function to fetch geofencing data
+    _fetchDeviceLocations(); // Fetch device locations and update map
+    _fetchUserDevices(); // Fetch devices associated with the user
   }
+  Future<void> associateDeviceWithUser(String deviceId, String userId) async {
+    final DatabaseReference userDevicesRef = FirebaseDatabase.instance.ref('user_devices/$userId');
+    await userDevicesRef.child(deviceId).set(true);
+  }
+
+  Future<List<String>> fetchUserDevices(String userId) async {
+    final DatabaseReference userDevicesRef = FirebaseDatabase.instance.ref('user_devices/$userId');
+    DataSnapshot snapshot = await userDevicesRef.get();
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> devices = snapshot.value as Map<dynamic, dynamic>;
+      return devices.keys.map((key) => key.toString()).toList();
+    } else {
+      return [];
+    }
+  }
+
+ Future<void> _fetchUserDevices() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    String userId = user.uid;
+    List<String> userDevices = await fetchUserDevices(userId);
+
+    for (String deviceId in userDevices) {
+      try {
+        final snapshot = await _deviceLocationRef.child(deviceId).get();
+        if (snapshot.exists) {
+          final dynamic value = snapshot.value;
+          if (value is Map) {
+            final Map<dynamic, dynamic> location = value.cast<dynamic, dynamic>();
+            final latitude = (location['latitude'] as num).toDouble();
+            final longitude = (location['longitude'] as num).toDouble();
+            setState(() {
+              _markers[deviceId] = Marker(
+                markerId: MarkerId(deviceId),
+                position: LatLng(latitude, longitude),
+                infoWindow: InfoWindow(title: deviceId),
+              );
+            });
+          } else {
+            print('Unexpected data format for device $deviceId');
+          }
+        } else {
+          print('No data found for device $deviceId');
+        }
+      } catch (error) {
+        print('Error fetching location for device $deviceId: $error');
+      }
+    }
+  } else {
+    print('No user is currently authenticated.');
+  }
+}
+
+
+
+Future<void> _fetchDeviceLocations() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    String userId = user.uid;
+    
+    try {
+      // Fetch the paired devices for the current user
+      final pairedDevicesRef = FirebaseDatabase.instance.ref('device_pairings');
+      final pairedDevicesSnapshot = await pairedDevicesRef.child(userId).get();
+      
+      if (pairedDevicesSnapshot.exists) {
+        final userPairedDevices = pairedDevicesSnapshot.value as Map<dynamic, dynamic>;
+
+        // Fetch and display the location of each paired device
+        for (String deviceId in userPairedDevices.keys) {
+          final deviceLocationRef = FirebaseDatabase.instance.ref('device_location').child(deviceId);
+          final locationSnapshot = await deviceLocationRef.get();
+
+          if (locationSnapshot.exists) {
+            final locationData = locationSnapshot.value as Map<dynamic, dynamic>;
+            final latitude = (locationData['latitude'] as num).toDouble();
+            final longitude = (locationData['longitude'] as num).toDouble();
+            
+            setState(() {
+              _markers[deviceId] = Marker(
+                markerId: MarkerId(deviceId),
+                position: LatLng(latitude, longitude),
+                infoWindow: InfoWindow(title: deviceId),
+              );
+            });
+          } else {
+            print('Location data not found for device $deviceId');
+          }
+        }
+      } else {
+        print('No paired devices found.');
+      }
+    } catch (e) {
+      print('Error fetching device locations: $e');
+    }
+  } else {
+    print('No user is currently authenticated.');
+  }
+}
+
+
 
   void fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -103,6 +232,7 @@ class _HomePageState extends State<HomePage> {
       theme: AppTheme.getTheme(isDarkMode),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
+        key: _scaffoldKey, // Set the global key for the scaffold
         appBar: AppBar(
           backgroundColor: isDarkMode
               ? Color.fromARGB(255, 5, 5, 22)
@@ -185,25 +315,27 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-              // ListTile(
-              //  leading: const Icon(Icons.search_sharp),
-              //  title: Text(
-              //  'Search for Device',
-              //  style: TextStyle(
-              //   fontSize: 16,
-              //   color: isDarkMode ? Colors.white : Colors.black,
-              //   fontFamily: 'Roboto',
-              // fontWeight: FontWeight.w500,
-              // ),
-              //),
-              //  onTap: () {
-              //  Navigator.push(
-              //     context,
-              //     MaterialPageRoute(
-              //        builder: (context) => const SearchForDevicePage()),
-              //   );
-              // },
-              // ),
+               ListTile(
+                leading: const Icon(Icons.edit_location),
+                title: Text(
+                  'Edit Device Location',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditDeviceLocationPage(),
+                    ),
+                  );
+                  _scaffoldKey.currentState?.closeDrawer(); // Close the drawer
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.save),
                 title: Text(
@@ -219,9 +351,34 @@ class _HomePageState extends State<HomePage> {
                   setState(() {
                     isGeofencingEnabled = !isGeofencingEnabled;
                   });
+                  _scaffoldKey.currentState?.closeDrawer(); // Close the drawer
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.settings),
+                title: Text(
+                  'Pair a Device',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>  SearchForDevicePage(
+                      onLocationUpdated:(location){_updateMapWithLocation(location);
+                      },
+                      ),
+                    ),
+                  );
+                   _scaffoldKey.currentState?.closeDrawer();
+                },
+              ),
+               ListTile(
                 leading: const Icon(Icons.settings),
                 title: Text(
                   'Settings',
@@ -261,84 +418,104 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         body: _initialCameraPosition.latitude == 0 &&
-                _initialCameraPosition.longitude == 0
-            ? Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: _initialCameraPosition,
-                          zoom: 16,
-                        ),
-                        onMapCreated: (GoogleMapController controller) {
-                          _mapController = controller;
-                        },
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
-                        onTap: _selectLocation,
-                        markers: {
-                          Marker(
-                            markerId: MarkerId('selectedLocation'),
-                            position: _selectedLocation,
-                            infoWindow: InfoWindow(
-                              title: 'Selected Location',
-                            ),
-                          ),
-                        },
-                        circles: circles,
-                      ),
-                    ),
-                    if (isGeofencingEnabled) ...[
-                      Slider(
-                        value: _sliderValue,
-                        min: 5.0,
-                        max: 50.0,
-                        divisions: 9,
-                        label: 'Geofence Radius: $_sliderValue meters',
-                        onChanged: (value) {
-                          setState(() {
-                            _sliderValue = value;
-                            fenceRadius = value;
-                            circles = Set.from([
-                              Circle(
-                                circleId: CircleId('geofence'),
-                                center: _selectedLocation,
-                                radius: fenceRadius,
-                                strokeWidth: 2,
-                                fillColor: Colors.green.withOpacity(0.1),
-                                strokeColor: Color.fromARGB(255, 7, 252, 43),
-                              ),
-                            ]);
-                          });
-                        },
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          String? username =
-                              await GeofencingService.fetchUsername();
-                          if (username != null) {
-                            GeofencingService.storeGeofencingData(
-                              fenceRadius: fenceRadius,
-                              selectedLocation: _selectedLocation,
-                              username: username,
-                            );
-                            // Toggle isGeofencingEnabled after saving data
-                            setState(() {
-                              isGeofencingEnabled = false;
-                            });
-                          } else {
-                            print('Username not found or an error occurred.');
-                          }
-                        },
-                        child: Text('Save Geofencing Data'),
-                      ),
-                    ],
-                  ],
+        _initialCameraPosition.longitude == 0
+    ? Center(child: CircularProgressIndicator())
+    : Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: _initialCameraPosition,
+                  zoom: 16,
                 ),
+                onMapCreated: (GoogleMapController controller) {
+                  _mapController = controller;
+                },
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                onTap: isGeofencingEnabled ? _selectLocation : null,
+                markers: _markers.values.toSet(),
+                circles: circles,
               ),
+            ),
+            if (isGeofencingEnabled) ...[
+              Slider(
+                value: _sliderValue,
+                min: 5.0,
+                max: 50.0,
+                divisions: 9,
+                label: 'Geofence Radius: $_sliderValue meters',
+                onChanged: (value) {
+                  setState(() {
+                    _sliderValue = value;
+                    fenceRadius = value;
+                    circles = Set.from([
+                      Circle(
+                        circleId: CircleId('geofence'),
+                        center: _selectedLocation,
+                        radius: fenceRadius,
+                        strokeWidth: 2,
+                        fillColor: Colors.blue.withOpacity(0.1),
+                        strokeColor: Colors.blue,
+                      ),
+                    ]);
+                  });
+                },
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      String? username =
+                          await GeofencingService.fetchUsername();
+                      if (username != null) {
+                        await GeofencingService.storeGeofencingData(
+                          fenceRadius: fenceRadius,
+                          selectedLocation: _selectedLocation,
+                          username: username,
+                        );
+                        setState(() {
+                          isGeofencingEnabled = false;
+                        });
+                      } else {
+                        print('Username not found or an error occurred.');
+                      }
+                    },
+                    child: Text('Save'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isGeofencingEnabled = false; // Cancel editing
+                        _selectedLocation = _previousLocation; // Restore previous location
+                        _sliderValue = _previousRadius; // Restore previous slider value
+                        fenceRadius = _previousRadius; // Restore previous fence radius
+                        circles = Set.from([
+                          Circle(
+                            circleId: CircleId('geofence'),
+                            center: _selectedLocation,
+                            radius: fenceRadius,
+                            strokeWidth: 2,
+                            fillColor: Colors.blue.withOpacity(0.1),
+                            strokeColor: Colors.blue,
+                          ),
+                        ]);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      primary: const Color.fromARGB(255, 255, 130, 121), // Red color for cancel button
+                    ),
+                    child: Text('Cancel'),
+                  )
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
       ),
     );
   }
@@ -386,27 +563,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _selectLocation(LatLng position) {
-    setState(() {
-      _selectedLocation = position;
-      circles = Set.from([
-        Circle(
-          circleId: CircleId('geofence'),
-          center: _selectedLocation,
-          radius: fenceRadius,
-          strokeWidth: 2,
-          fillColor: Colors.green.withOpacity(0.1),
-          strokeColor: Color.fromARGB(255, 7, 252, 43),
-        ),
-      ]);
-    });
-  }
-
-  void fetchGeofencingData() async {
-    GeofencingService.fetchGeofencingData(
-        onDataReceived: (fenceRadius, location) {
+    if (isGeofencingEnabled) {
       setState(() {
-        _selectedLocation = location;
-        _sliderValue = fenceRadius;
+        _selectedLocation = position;
+        _sliderValue = 5; // Reset slider value to 5
+        fenceRadius = _sliderValue; // Ensure fence radius is also reset
         circles = Set.from([
           Circle(
             circleId: CircleId('geofence'),
@@ -418,6 +579,35 @@ class _HomePageState extends State<HomePage> {
           ),
         ]);
       });
-    });
+    }
+  }
+
+  void fetchGeofencingData() async {
+    GeofencingService.fetchGeofencingData(
+      onDataReceived: (fenceRadius, location) {
+        setState(() {
+          // Store the previous geofence data
+          _previousLocation = location;
+          _previousRadius = fenceRadius;
+          
+          // Update the current geofence data
+          _selectedLocation = location;
+          _sliderValue = fenceRadius;
+          circles = Set.from([
+            Circle(
+              circleId: CircleId('geofence'),
+              center: _selectedLocation,
+              radius: fenceRadius,
+              strokeWidth: 2,
+              fillColor: Colors.blue.withOpacity(0.1),
+              strokeColor: Colors.blue,
+            ),
+          ]);
+          _mapController.animateCamera(
+            CameraUpdate.newLatLng(_selectedLocation),
+          );
+        });
+      },
+    );
   }
 }
